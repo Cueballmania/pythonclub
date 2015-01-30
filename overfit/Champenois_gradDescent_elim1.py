@@ -51,11 +51,11 @@ def newtons(m,alpha,maxIter,fitVars,fitVals):
     
 raw = pd.read_csv('/Users/elio/Documents/Python/overfitting.csv')
 
-sampleVals = raw.Target_Practice[raw.train==1]
+sampleVals = np.array(raw.Target_Practice[raw.train==1])
 varColumns = ['var_'+str(varnum) for varnum in range(1,201)]
-sampleVars = raw[varColumns][raw.train==1]
+sampleVars = np.array(raw[varColumns][raw.train==1])
 otherVals = raw.Target_Practice[raw.train==0]
-otherVars = raw[varColumns][raw.train==0]
+otherVars = np.array(raw[varColumns][raw.train==0])
     
 #m = 1*(2*np.random.rand(len(varColumns))-1)
 m=np.dot(np.linalg.inv(np.dot(sampleVars.T,sampleVars)),np.dot(sampleVars.T,sampleVals))
@@ -68,7 +68,7 @@ maxIter = 5
 #%%
 def elimVars(m,sampleVars,sampleVals):
     keptVars = range(0,len(m))
-    mFilt = mFilt = [m[i] for i in keptVars]
+    mFilt = [m[i] for i in keptVars]
     alpha = 1
     maxIter = 5
     while any(m>0):
@@ -79,15 +79,24 @@ def elimVars(m,sampleVars,sampleVals):
         m[keptVars[minIndex]]=0
         keptVars.pop(minIndex)
         mFilt = [m[i] for i in keptVars]
-        varColumnsFilt = ['var_'+str(varnum+1) for varnum in keptVars]
-        sampleVarsFilt = raw[varColumnsFilt][raw.train==1]
+        sampleVarsFilt = sampleVars[:,keptVars]
         mFilt = newtons(mFilt,alpha,maxIter,sampleVarsFilt,sampleVals)[0]
         m = np.zeros(200)
         for i in range(0,len(keptVars)):
             m[keptVars[i]] = mFilt[i]
-    return m, checkPrediction(m,sampleVars,sampleVals),checkPrediction(m,otherVars,otherVals)
-        
-print elimVars(m,sampleVars,sampleVals)[1::]
+    return m
+    
+mFinal = elimVars(m,sampleVars,sampleVals)
+
+print checkPrediction(mFinal,sampleVars,sampleVals),checkPrediction(mFinal,otherVars,otherVals)
 
 #%%
-
+#Nsets = 100
+#bootstrap = np.random.randint(0,len(sampleVals),(250,Nsets))
+#mMat = np.zeros((Nsets,len(m)))
+#
+#for i in range(0,Nsets):
+#    
+#    resampledVars = sampleVars[bootstrap[:,i],:]
+#    resampledVals = sampleVals[bootstrap[:,i]]
+#    mMat[i,:] = elimVars(m,resampledVars,resampledVals)
